@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:5000";
+const SOCKET_URL = "https://project-management-1-1.onrender.com";
 
 const socket = io(SOCKET_URL, {
     withCredentials: true,
