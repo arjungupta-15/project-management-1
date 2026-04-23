@@ -112,7 +112,7 @@ const TaskDetails = () => {
         }
     };
 
-    const getFileUrl = (filename) => `http://localhost:5000/uploads/${filename}`;
+    const getFileUrl = (filename) => `https://project-management-1-1.onrender.com/uploads/${filename}`;
 
     const formatSize = (bytes) => {
         if (!bytes) return '';
