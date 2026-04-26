@@ -42,10 +42,23 @@ export const getProjects = async (req, res) => {
             .populate('team_lead', 'name email image')
             .populate('members', 'name email image');
         
-        // Calculate progress for each project (mock calculation or from tasks)
-        // For now, we just return them. In a real app, we'd count completed tasks.
+        // Ensure progress is up to date for each project
+        const projectsWithProgress = await Promise.all(projects.map(async (project) => {
+            const tasks = await Task.find({ projectId: project._id });
+            const total = tasks.length;
+            const done = tasks.filter(t => t.status === 'DONE').length;
+            const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+            
+            // Update in DB if different (optional but good for consistency)
+            if (project.progress !== progress) {
+                await Project.findByIdAndUpdate(project._id, { progress });
+                project.progress = progress;
+            }
+            
+            return { ...project._doc, progress, tasks: [] }; // return empty tasks to keep payload small for overview
+        }));
         
-        res.json(projects);
+        res.json(projectsWithProgress);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

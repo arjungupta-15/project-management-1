@@ -127,23 +127,41 @@ const workspaceSlice = createSlice({
                 if (p._id === action.payload.projectId) {
                     const taskExists = p.tasks?.find(t => t._id === action.payload._id);
                     if (!taskExists) {
-                        return { ...p, tasks: [...(p.tasks || []), action.payload] };
+                        const updatedTasks = [...(p.tasks || []), action.payload];
+                        const total = updatedTasks.length;
+                        const done = updatedTasks.filter(t => t.status === 'DONE').length;
+                        const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+                        return { ...p, tasks: updatedTasks, progress };
                     }
                 }
                 return p;
             });
         },
         socketTaskUpdated: (state, action) => {
-            state.projects = state.projects.map(p => ({
-                ...p,
-                tasks: p.tasks?.map(t => t._id === action.payload._id ? action.payload : t)
-            }));
+            state.projects = state.projects.map(p => {
+                if (p.tasks?.find(t => t._id === action.payload._id)) {
+                    const updatedTasks = p.tasks.map(t => 
+                        t._id === action.payload._id ? action.payload : t
+                    );
+                    const total = updatedTasks.length;
+                    const done = updatedTasks.filter(t => t.status === 'DONE').length;
+                    const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+                    return { ...p, tasks: updatedTasks, progress };
+                }
+                return p;
+            });
         },
         socketTaskDeleted: (state, action) => {
-            state.projects = state.projects.map(p => ({
-                ...p,
-                tasks: p.tasks?.filter(t => t._id !== action.payload)
-            }));
+            state.projects = state.projects.map(p => {
+                if (p.tasks?.find(t => t._id === action.payload)) {
+                    const updatedTasks = p.tasks.filter(t => t._id !== action.payload);
+                    const total = updatedTasks.length;
+                    const done = updatedTasks.filter(t => t.status === 'DONE').length;
+                    const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+                    return { ...p, tasks: updatedTasks, progress };
+                }
+                return p;
+            });
         }
     },
     extraReducers: (builder) => {
