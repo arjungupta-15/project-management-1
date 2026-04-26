@@ -23,6 +23,15 @@ export const register = createAsyncThunk('auth/register', async (userData, { rej
     }
 });
 
+export const sendOTP = createAsyncThunk('auth/sendOTP', async (email, { rejectWithValue }) => {
+    try {
+        const { data } = await API.post('/auth/send-otp', { email });
+        return data;
+    } catch (error) {
+        return rejectWithValue(error.response?.data || { message: error.message });
+    }
+});
+
 const authSlice = createSlice({
     name: 'auth',
     initialState: {

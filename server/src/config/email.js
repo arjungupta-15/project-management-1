@@ -131,3 +131,26 @@ export const sendOverdueTaskEmail = async ({ toEmail, toName, taskTitle, project
         console.error('Overdue email failed:', error.message);
     }
 };
+
+export const sendOTPEmail = async ({ toEmail, otp }) => {
+    try {
+        await transporter.sendMail({
+            from: `"Project Manager" <${process.env.EMAIL_USER}>`,
+            to: toEmail,
+            subject: `Email Verification OTP`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                    <h2 style="color: #3b82f6; text-align: center;">Verification Code</h2>
+                    <p>Use the following OTP to verify your email address and complete your registration:</p>
+                    <div style="background: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center;">
+                        <h1 style="letter-spacing: 5px; font-size: 32px; color: #111; margin: 0;">${otp}</h1>
+                    </div>
+                    <p>This code will expire in 5 minutes.</p>
+                    <p>If you didn't request this code, please ignore this email.</p>
+                </div>
+            `
+        });
+    } catch (error) {
+        console.error('OTP email failed:', error.message);
+    }
+};
