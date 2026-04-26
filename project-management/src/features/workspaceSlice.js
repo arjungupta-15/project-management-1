@@ -123,9 +123,12 @@ const workspaceSlice = createSlice({
             state.projects = state.projects.filter(p => p._id !== action.payload);
         },
         socketTaskCreated: (state, action) => {
+            const taskId = action.payload._id?.toString() || action.payload._id;
+            const projectId = action.payload.projectId?.toString() || action.payload.projectId;
+
             state.projects = state.projects.map(p => {
-                if (p._id === action.payload.projectId) {
-                    const taskExists = p.tasks?.find(t => t._id === action.payload._id);
+                if (p._id?.toString() === projectId) {
+                    const taskExists = p.tasks?.find(t => (t._id?.toString() || t._id) === taskId);
                     if (!taskExists) {
                         const updatedTasks = [...(p.tasks || []), action.payload];
                         const total = updatedTasks.length;
@@ -200,9 +203,15 @@ const workspaceSlice = createSlice({
             })
             // Add Task - recalculate progress
             .addCase(addTask.fulfilled, (state, action) => {
+                const taskId = action.payload._id?.toString() || action.payload._id;
+                const projectId = action.payload.projectId?.toString() || action.payload.projectId;
+
                 state.projects = state.projects.map(p => {
-                    if (p._id !== action.payload.projectId?.toString() &&
-                        p._id !== action.payload.projectId) return p;
+                    const pId = p._id?.toString() || p._id;
+                    if (pId !== projectId) return p;
+
+                    const taskExists = p.tasks?.find(t => (t._id?.toString() || t._id) === taskId);
+                    if (taskExists) return p;
 
                     const updatedTasks = [...(p.tasks || []), action.payload];
                     const total = updatedTasks.length;
