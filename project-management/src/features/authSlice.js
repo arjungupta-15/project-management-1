@@ -71,6 +71,18 @@ const authSlice = createSlice({
             .addCase(register.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload?.message || 'Registration failed';
+            })
+            .addCase(sendOTP.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(sendOTP.fulfilled, (state) => {
+                state.loading = false;
+                state.error = null;
+            })
+            .addCase(sendOTP.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload?.message || 'Failed to send OTP';
             });
     },
 });

@@ -152,5 +152,6 @@ export const sendOTPEmail = async ({ toEmail, otp }) => {
         });
     } catch (error) {
         console.error('OTP email failed:', error.message);
+        throw error;
     }
 };

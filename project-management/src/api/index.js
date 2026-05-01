@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: 'https://project-management-1-1.onrender.com/api',
+    baseURL: window.location.hostname === 'localhost' 
+        ? 'http://localhost:5000/api' 
+        : 'https://project-management-1-1.onrender.com/api',
 });
 
 // Add a request interceptor to include the JWT token in headers
