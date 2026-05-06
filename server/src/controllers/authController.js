@@ -1,7 +1,7 @@
 import User from '../models/User.js';
 import OTP from '../models/OTP.js';
 import jwt from 'jsonwebtoken';
-import { sendOTPEmail } from '../config/email.js';
+import { sendOTPEmail, verifySupabaseOTP } from '../config/email.js';
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -20,20 +20,10 @@ export const sendOTP = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Generate 6 digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        // Trigger Supabase OTP
+        await sendOTPEmail({ toEmail: email });
 
-        // Save OTP to DB
-        await OTP.findOneAndUpdate(
-            { email },
-            { otp, createdAt: new Date() },
-            { upsert: true, returnDocument: 'after' }
-        );
-
-        // Send Email
-        await sendOTPEmail({ toEmail: email, otp });
-
-        res.status(200).json({ message: 'OTP sent successfully' });
+        res.status(200).json({ message: 'OTP sent successfully via Supabase' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -50,21 +40,19 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Verify OTP
-        const otpRecord = await OTP.findOne({ email, otp });
-        if (!otpRecord) {
+        // Verify OTP with Supabase
+        try {
+            await verifySupabaseOTP({ email, otp });
+        } catch (error) {
             return res.status(400).json({ message: 'Invalid or expired OTP' });
         }
 
-        // Create user
+        // Create user in MongoDB
         const user = await User.create({
             name,
             email,
             password
         });
-
-        // Delete OTP after successful registration
-        await OTP.deleteOne({ _id: otpRecord._id });
 
         if (user) {
             res.status(201).json({
