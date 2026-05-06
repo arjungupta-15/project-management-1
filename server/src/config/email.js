@@ -4,23 +4,27 @@ dotenv.config();
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use SSL
+    port: 587,
+    secure: false, // Use STARTTLS
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    // Force IPv4 because some environments have issues with IPv6 (ENETUNREACH)
+    family: 4,
     // Add timeouts to prevent hanging
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
+    connectionTimeout: 15000, // 15 seconds
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
 });
 
 // Verify connection configuration
 transporter.verify(function (error, success) {
     if (error) {
-        console.error("CRITICAL: Email Transporter verify error:", error.message);
-        console.error("Make sure EMAIL_USER and EMAIL_PASS are set correctly in environment variables.");
+        console.error("CRITICAL: Email Transporter verify error:", error.code, error.message);
+        if (error.code === 'ENETUNREACH') {
+            console.error("Network is unreachable. This is likely a cloud provider restriction on SMTP ports (587/465).");
+        }
     } else {
         console.log("Email server is ready to send messages!");
     }
