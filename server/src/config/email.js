@@ -1,60 +1,44 @@
-import { createClient } from '@supabase/supabase-js';
+import * as Brevo from '@getbrevo/brevo';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Initialize Supabase
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-);
+const apiInstance = new Brevo.TransactionalEmailsApi();
+if (process.env.BREVO_API_KEY) {
+    apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+    console.log("✅ Brevo API Initialized (Render Safe)");
+}
 
-export const sendOTPEmail = async ({ toEmail }) => {
+const SENDER_EMAIL = process.env.EMAIL_USER;
+const SENDER_NAME = "Project Manager";
+
+export const sendOTPEmail = async ({ toEmail, otp }) => {
     try {
-        console.log(`Triggering Supabase OTP for: ${toEmail}...`);
-        
-        const { error } = await supabase.auth.signInWithOtp({
-            email: toEmail,
-            options: {
-                shouldCreateUser: true // This will send a 6-digit OTP code if configured
-            }
-        });
+        console.log(`Sending OTP to: ${toEmail} via Brevo API...`);
+        const sendSmtpEmail = new Brevo.SendSmtpEmail();
+        sendSmtpEmail.subject = "Email Verification OTP";
+        sendSmtpEmail.htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h2 style="color: #3b82f6; text-align: center;">Verification Code</h2>
+                <p>Use the following OTP to verify your email address:</p>
+                <div style="background: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center;">
+                    <h1 style="letter-spacing: 5px; font-size: 32px; color: #111; margin: 0;">${otp}</h1>
+                </div>
+                <p>This code will expire in 5 minutes.</p>
+            </div>
+        `;
+        sendSmtpEmail.sender = { "name": SENDER_NAME, "email": SENDER_EMAIL };
+        sendSmtpEmail.to = [{ "email": toEmail }];
 
-        if (error) throw error;
-        console.log('Supabase OTP triggered successfully');
+        await apiInstance.sendTransacEmail(sendSmtpEmail);
+        console.log('OTP sent successfully via Brevo API');
     } catch (error) {
-        console.error('Supabase OTP failed:', error.message);
+        console.error('Brevo API error:', error.message);
         throw error;
     }
 };
 
-// Function to verify OTP with Supabase
-export const verifySupabaseOTP = async ({ email, otp }) => {
-    try {
-        const { data, error } = await supabase.auth.verifyOtp({
-            email,
-            token: otp,
-            type: 'signup' // or 'magiclink' depending on settings
-        });
-
-        if (error) {
-            // Try 'magiclink' type if 'signup' fails (sometimes Supabase defaults to this)
-            const { data: data2, error: error2 } = await supabase.auth.verifyOtp({
-                email,
-                token: otp,
-                type: 'magiclink'
-            });
-            if (error2) throw error2;
-            return data2;
-        }
-        return data;
-    } catch (error) {
-        console.error('Supabase OTP Verification failed:', error.message);
-        throw error;
-    }
-};
-
-// Simplified versions of other functions
-export const sendTaskAssignedEmail = async (details) => { console.log("Task email (Supabase context) for:", details.toEmail); };
-export const sendTaskCompletedEmail = async (details) => { console.log("Task completion (Supabase context) for:", details.toEmail); };
-export const sendWorkspaceInviteEmail = async (details) => { console.log("Invite (Supabase context) for:", details.toEmail); };
-export const sendOverdueTaskEmail = async (details) => { console.log("Overdue (Supabase context) for:", details.toEmail); };
+// Placeholders
+export const sendTaskAssignedEmail = async (details) => {};
+export const sendTaskCompletedEmail = async (details) => {};
+export const sendWorkspaceInviteEmail = async (details) => {};
+export const sendOverdueTaskEmail = async (details) => {};
