@@ -27,7 +27,7 @@ export const sendOTP = async (req, res) => {
         await OTP.findOneAndUpdate(
             { email },
             { otp, createdAt: new Date() },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         // Send Email

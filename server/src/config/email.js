@@ -3,17 +3,24 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Use SSL
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, // Gmail App Password
-    }
+        pass: process.env.EMAIL_PASS,
+    },
+    // Add timeouts to prevent hanging
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
 });
 
 // Verify connection configuration
 transporter.verify(function (error, success) {
     if (error) {
-        console.log("CRITICAL: Transporter verify error:", error.message);
+        console.error("CRITICAL: Email Transporter verify error:", error.message);
+        console.error("Make sure EMAIL_USER and EMAIL_PASS are set correctly in environment variables.");
     } else {
         console.log("Email server is ready to send messages!");
     }
@@ -120,7 +127,7 @@ export const sendOverdueTaskEmail = async ({ toEmail, toName, taskTitle, project
                     </div>
                     <p style="color: #ef4444;"><strong>Warning:</strong> If this task is not completed soon, further action may be taken.</p>
                     <p>Please login and complete your task immediately.</p>
-                    <a href="http://localhost:5173" style="display: inline-block; margin-top: 16px; padding: 10px 20px; background: #ef4444; color: white; border-radius: 6px; text-decoration: none;">
+                    <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}" style="display: inline-block; margin-top: 16px; padding: 10px 20px; background: #ef4444; color: white; border-radius: 6px; text-decoration: none;">
                         Open App
                     </a>
                 </div>
@@ -134,7 +141,13 @@ export const sendOverdueTaskEmail = async ({ toEmail, toName, taskTitle, project
 
 export const sendOTPEmail = async ({ toEmail, otp }) => {
     try {
-        await transporter.sendMail({
+        console.log(`Attempting to send OTP email to: ${toEmail}...`);
+        
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            throw new Error("Missing EMAIL_USER or EMAIL_PASS environment variables");
+        }
+
+        const info = await transporter.sendMail({
             from: `"Project Manager" <${process.env.EMAIL_USER}>`,
             to: toEmail,
             subject: `Email Verification OTP`,
@@ -150,8 +163,10 @@ export const sendOTPEmail = async ({ toEmail, otp }) => {
                 </div>
             `
         });
+        console.log(`OTP email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
     } catch (error) {
-        console.error('OTP email failed:', error.message);
+        console.error('CRITICAL: OTP email failed!');
+        console.error('Error Message:', error.message);
         throw error;
     }
 };

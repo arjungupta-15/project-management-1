@@ -4,6 +4,7 @@ const API = axios.create({
     baseURL: window.location.hostname === 'localhost' 
         ? 'http://localhost:5000/api' 
         : 'https://project-management-1-1.onrender.com/api',
+    timeout: 30000, // 30 seconds timeout
 });
 
 // Add a request interceptor to include the JWT token in headers

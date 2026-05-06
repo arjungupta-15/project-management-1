@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+dotenv.config();
+
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,14 +12,11 @@ import workspaceRoutes from './src/routes/workspaceRoutes.js';
 import projectRoutes from './src/routes/projectRoutes.js';
 import taskRoutes from './src/routes/taskRoutes.js';
 import { startCronJobs } from './src/config/cronJobs.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 import { Server } from 'socket.io';
 import http from 'http';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
