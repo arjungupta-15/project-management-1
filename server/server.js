@@ -1,4 +1,6 @@
 import express from 'express';
+// Triggering restart to load new .env variables
+
 import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config();

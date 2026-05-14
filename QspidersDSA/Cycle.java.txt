@@ -1,0 +1,10 @@
+Class  Home {
+	public static void main (String [] args){
+		String name = "room";
+		byte hall = 3;
+		byte kichen = 2;
+    		byte storeroom = 2;
+                byte washroom = 4;
+ 		System.out.println("hall" +hall );
+}
+}
