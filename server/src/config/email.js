@@ -130,7 +130,7 @@ export const sendTaskAssignedEmail = async ({ toEmail, toName, taskTitle, projec
             },
             body: JSON.stringify({
                 sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-                to: [{ email: toEmail, name: toName }],
+                to: [{ email: toEmail, name: toName || 'User' }],
                 subject: `New Task Assigned: ${taskTitle}`,
                 htmlContent: `
                     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
@@ -139,7 +139,7 @@ export const sendTaskAssignedEmail = async ({ toEmail, toName, taskTitle, projec
                         </div>
                         <h2 style="color: #1e293b; font-size: 20px; margin-bottom: 15px;">New Task Assigned</h2>
                         <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-                            Hi ${toName}, you have been assigned a new task in <strong>${projectName}</strong> by <strong>${assignedBy}</strong>.
+                            Hi ${toName || 'User'}, you have been assigned a new task in <strong>${projectName}</strong> by <strong>${assignedBy}</strong>.
                         </p>
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
                             <h3 style="margin-top: 0; color: #1e293b;">${taskTitle}</h3>
@@ -157,10 +157,15 @@ export const sendTaskAssignedEmail = async ({ toEmail, toName, taskTitle, projec
             })
         });
 
-        if (!response.ok) throw new Error('Failed to send task assigned email');
-        return await response.json();
+        const data = await response.json();
+        if (!response.ok) {
+            console.error('Brevo API Error (Task Assigned):', data);
+            throw new Error(data.message || 'Failed to send task assigned email');
+        }
+        console.log('Task Assigned email sent successfully. ID:', data.messageId);
+        return data;
     } catch (error) {
-        console.error('Brevo API Error (Task Assigned):', error.message);
+        console.error('Email Service Error (Task Assigned):', error.message);
     }
 };
 
@@ -177,7 +182,7 @@ export const sendTaskCompletedEmail = async ({ toEmail, toName, taskTitle, proje
             },
             body: JSON.stringify({
                 sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-                to: [{ email: toEmail, name: toName }],
+                to: [{ email: toEmail, name: toName || 'User' }],
                 subject: `Task Completed: ${taskTitle}`,
                 htmlContent: `
                     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
@@ -186,7 +191,7 @@ export const sendTaskCompletedEmail = async ({ toEmail, toName, taskTitle, proje
                         </div>
                         <h2 style="color: #059669; font-size: 20px; margin-bottom: 15px;">Task Completed!</h2>
                         <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-                            Hi ${toName}, the task <strong>${taskTitle}</strong> in project <strong>${projectName}</strong> has been completed by <strong>${completedBy}</strong>.
+                            Hi ${toName || 'User'}, the task <strong>${taskTitle}</strong> in project <strong>${projectName}</strong> has been completed by <strong>${completedBy}</strong>.
                         </p>
                         <div style="text-align: center; margin-top: 30px;">
                             <a href="${process.env.FRONTEND_URL}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;">
@@ -198,13 +203,66 @@ export const sendTaskCompletedEmail = async ({ toEmail, toName, taskTitle, proje
             })
         });
 
-        if (!response.ok) throw new Error('Failed to send task completed email');
-        return await response.json();
+        const data = await response.json();
+        if (!response.ok) {
+            console.error('Brevo API Error (Task Completed):', data);
+            throw new Error(data.message || 'Failed to send task completed email');
+        }
+        console.log('Task Completed email sent successfully. ID:', data.messageId);
+        return data;
     } catch (error) {
-        console.error('Brevo API Error (Task Completed):', error.message);
+        console.error('Email Service Error (Task Completed):', error.message);
     }
 };
 
-export const sendOverdueTaskEmail = async (details) => {};
+export const sendOverdueTaskEmail = async ({ toEmail, toName, taskTitle, projectName, dueDate }) => {
+    try {
+        console.log(`Sending Overdue Task email to: ${toEmail}...`);
+        
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': process.env.BREVO_API_KEY,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                to: [{ email: toEmail, name: toName || 'User' }],
+                subject: `URGENT: Task Overdue - ${taskTitle}`,
+                htmlContent: `
+                    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+                        <div style="text-align: center; margin-bottom: 25px;">
+                            <h1 style="color: #dc2626; margin: 0; font-size: 24px;">Project Manager</h1>
+                        </div>
+                        <h2 style="color: #dc2626; font-size: 20px; margin-bottom: 15px;">Task Overdue!</h2>
+                        <p style="color: #475569; font-size: 16px; line-height: 1.6;">
+                            Hi ${toName || 'User'}, the task <strong>${taskTitle}</strong> in project <strong>${projectName}</strong> was due on ${new Date(dueDate).toLocaleDateString()}.
+                        </p>
+                        <p style="color: #475569; font-size: 16px; line-height: 1.6;">
+                            Please complete the task as soon as possible to keep the project on track.
+                        </p>
+                        <div style="text-align: center; margin-top: 30px;">
+                            <a href="${process.env.FRONTEND_URL}" style="background-color: #dc2626; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;">
+                                View Task
+                            </a>
+                        </div>
+                    </div>
+                `
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            console.error('Brevo API Error (Overdue):', data);
+            throw new Error(data.message || 'Failed to send overdue email');
+        }
+        console.log('Overdue email sent successfully. ID:', data.messageId);
+        return data;
+    } catch (error) {
+        console.error('Email Service Error (Overdue):', error.message);
+    }
+};
+
 
 
